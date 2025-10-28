@@ -158,7 +158,7 @@ class Expression_Methods(Expression):
                 if right is None:
                     return None
                 left = Node(op, [left, right])
-                print(f"Created node for '{op}' with left '{left.children[0].value}' and right '{left.children[1].value}'.")
+                # print(f"Created node for '{op}' with left '{left.children[0].value}' and right '{left.children[1].value}'.")
             
             return left
         
@@ -182,7 +182,7 @@ class Expression_Methods(Expression):
                     print("[*]Error: Mismatched parentheses.")
                     return None
                 index += 1
-                print("Closed ')'; returning subexpression.")
+                # print("Closed ')'; returning subexpression.")
                 return expr
             
             elif token in UNARY_OPS:
@@ -199,6 +199,14 @@ class Expression_Methods(Expression):
                 print(f"[**]Invalid token '{token}' at position {index}.")
                 return None
         
+        def to_strict(node):
+        
+            if not node.children:
+                return node.value
+            elif len(node.children) == 1:
+                return f"({node.value} {to_strict(node.children[0])})"
+            else:
+                return f"({to_strict(node.children[0])} {node.value} {to_strict(node.children[1])})"
         index = 0
         tree = parse_expression()
         current = tree
@@ -213,29 +221,17 @@ class Expression_Methods(Expression):
                 current = None
                 break
             current = Node(op, [current, right])
-            print(f"[*]Created node for '{op}' with left '{current.children[0].value}' and right '{current.children[1].value}'.")
         
         tree = current  
         
-        if tree is None or index != len(tokens):
-            print("Invalid WFF in relaxed syntax.")
-            return
+        if index != len(tokens):
+            return False, None
         
-        print("Valid WFF in relaxed syntax.")
-        print()
+        else:
+            strict_version = to_strict(tree)
+            return True, strict_version
         
-        print("Converting to strict WPPF.")
-        def to_strict(node):
-            if not node.children:
-                return node.value
-            elif len(node.children) == 1:
-                return f"({node.value} {to_strict(node.children[0])})"
-            else:
-                return f"({to_strict(node.children[0])} {node.value} {to_strict(node.children[1])})"
-        
-        strict_version = to_strict(tree)
-        print(f"[===]Strict Version: {strict_version}")
-        print()
-        
-        print("[ABSTRACT_SYNTAX]: Displaying the formula tree.")
-        tree.print_tree()
+
+    def get_original_expression(self):
+        return self.original_expression
+    

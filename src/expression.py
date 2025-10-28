@@ -5,7 +5,7 @@ from utils.settings import *
 class Expression:
     def __init__(self, expression: str):
         self.expression = expression
-        print(f"Original Expression: {self.expression}\n")
+        self.original_expression = self.expression
         self.__match_symbols()
     
     def __match_symbols(self):
