@@ -54,7 +54,21 @@ class Menu():
                     print("This expression is a well formed propositional formulae" if self.is_well_formed_propositional_formulae == True else "Expression is not a well formed propositional formulae")
             
                 case 2:
-                    print("This expression is valid under relaxed syntax" if self.is_valid_under_relaxed_syntax == True else "Expression is not valid under relaxed syntax")
+                    if self.is_valid_under_relaxed_syntax:
+                        print("This expression is valid under relaxed syntax")
+                        inp = input("Do you want to see the well formed propositional formula of this expression? y/n").strip()
+                        inp = inp.lower()
+                        match inp:
+                            case 'y':
+                                print(f"The expression under strict syntax(well formed propositional formula): {self.strict_version}")
+                            
+                            case 'n':
+                                continue
+                            case _:
+                                pass
+                        
+                    else:
+                        print("Expression is not valid under relaxed syntax")
                 
                 case 3:
                     if not self.is_well_formed_propositional_formulae:

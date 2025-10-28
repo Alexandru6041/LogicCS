@@ -154,7 +154,7 @@ class Expression_Methods(Expression):
             while index < len(tokens) and tokens[index] in BINARY_OPS and precedence.get(tokens[index], -1) >= min_prec:
                 op = tokens[index]
                 index += 1
-                right = parse_expression(precedence[op] + 1)
+                right = parse_expression(precedence[op])
                 if right is None:
                     return None
                 left = Node(op, [left, right])
