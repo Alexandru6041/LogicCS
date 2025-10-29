@@ -33,16 +33,18 @@ class Menu():
         print("\t1. Check if the expression is a 'well formed propositional formulae'")
         print("\t2. Analyze Relaxed Syntax")
         print("\t3. Build the abstract syntax step-by-step if the expression is valid")
-        print("\t4. Get the variables")
-        print("\t5. Enter a new expression")
-        print("\t6. Quit")
+        print("\t4. Build the truth table for the expression")
+        print("\t5. Get the variables")
+        print("\t6. Enter a new expression")
+        print("\t7. Quit")
+        print("\n")
         
     def _show_menu(self):
-        
         while True:
             sleep(0.5)
             self._display()
             choice = input("Your Choice: ").strip()
+            print("\n")
             if not choice.isdigit():
                 print("Invalid Choice")
                 continue
@@ -88,15 +90,25 @@ class Menu():
                             tree.print_tree()
                 
                 case 4:
+                    if not self.is_well_formed_propositional_formulae:
+                        if self.is_valid_under_relaxed_syntax:
+                            # print(self.strict_version)
+                            Expression_Methods(self.strict_version).build_truth_table()
+                    else:
+                        # print(self.client_expression.get_original_expression())
+                        self.client_expression.build_truth_table()
+                    # self.client_expression.build_truth_table()
+                    
+                case 5:
                     if self.is_valid_under_relaxed_syntax or self.is_well_formed_propositional_formulae:
                         vars = self.client_expression.get_variables()
                         print(f"Variables: {sorted(vars)}")
                     else:
-                        print("Invalid Expression")
-                case 5:   
+                        print("Invalid Expression\n")
+                case 6:   
                     break
                 
-                case 6:
+                case 7:
                     exit()
 
                 case _:

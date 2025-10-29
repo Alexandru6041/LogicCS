@@ -1,11 +1,16 @@
 import re
+import itertools
+import sys
+import os
+from contextlib import redirect_stdout
 
 from src.tree import Node
 from src.expression import Expression
 from utils.settings import (
     ATOM_PATTERN,
     BINARY_OPS,
-    UNARY_OPS
+    UNARY_OPS,
+    SYMBOL_MAP
 )
 
 
@@ -92,7 +97,6 @@ class Expression_Methods(Expression):
                     return node, j2 + 1
                 
                 elif op == ")":
-                    print(f"Found closing parenthesis, returning left subformula '{left.value}'")
                     left.print_tree()
                     print()
                     return left, j1 + 1
@@ -138,11 +142,11 @@ class Expression_Methods(Expression):
         
         original_expr = self.expression.strip()
         tokens = self._Expression__space_atoms()
-        print(f"Tokens: {tokens}")
-        print("\n")
         
+        word_to_symbol = {variable: key for key, variable in SYMBOL_MAP.items()}
+
         
-        precedence = {'not': 4, 'and': 3, 'or': 2, 'implies': 1, 'equivalent': 0}
+        precedence = {'not': 4, 'and': 3, 'or': 2, 'implies': 1, 'equiv': 0}
         
         def parse_expression(min_prec=0):
             nonlocal index
@@ -158,7 +162,6 @@ class Expression_Methods(Expression):
                 if right is None:
                     return None
                 left = Node(op, [left, right])
-                # print(f"Created node for '{op}' with left '{left.children[0].value}' and right '{left.children[1].value}'.")
             
             return left
         
@@ -166,7 +169,6 @@ class Expression_Methods(Expression):
             nonlocal index
             
             if index >= len(tokens):
-                print("[*]Error: Unexpected end of tokens in primary.")
                 return None
             
             token = tokens[index]
@@ -179,10 +181,8 @@ class Expression_Methods(Expression):
                 expr = parse_expression()
             
                 if expr is None or index >= len(tokens) or tokens[index] != ")":
-                    print("[*]Error: Mismatched parentheses.")
                     return None
                 index += 1
-                # print("Closed ')'; returning subexpression.")
                 return expr
             
             elif token in UNARY_OPS:
@@ -190,23 +190,22 @@ class Expression_Methods(Expression):
                 operand = parse_primary()
             
                 if operand is None:
-                    print("[*]Error: Unary missing operand.")
                     return None
                 node = Node(token, [operand])
                 return node
             
             else:
-                print(f"[**]Invalid token '{token}' at position {index}.")
                 return None
         
         def to_strict(node):
         
             if not node.children:
-                return node.value
+                return word_to_symbol.get(node.value, node.value)
             elif len(node.children) == 1:
-                return f"({node.value} {to_strict(node.children[0])})"
+                return f"({word_to_symbol.get(node.value, node.value)} {to_strict(node.children[0])})"
             else:
-                return f"({to_strict(node.children[0])} {node.value} {to_strict(node.children[1])})"
+                return f"({to_strict(node.children[0])} {word_to_symbol.get(node.value, node.value)} {to_strict(node.children[1])})"
+            
         index = 0
         tree = parse_expression()
         current = tree
@@ -235,3 +234,111 @@ class Expression_Methods(Expression):
     def get_original_expression(self):
         return self.original_expression
     
+    def get_subformulas(self, node, subformulas=None, seen=None):
+        if subformulas is None:
+            subformulas = []
+        if seen is None:
+            seen = set()
+        
+        if node.children:
+            for child in node.children:
+                self.get_subformulas(child, subformulas, seen)
+            
+            strict_str = self.to_strict_node(node)
+            if strict_str not in seen:
+                seen.add(strict_str)
+                subformulas.append(node)
+        
+        return subformulas
+
+    
+    def to_strict_node(self, node):
+        word_to_symbol = {variable: key for key, variable in SYMBOL_MAP.items()}
+        
+        if not node.children:
+            return word_to_symbol.get(node.value, node.value)
+        elif len(node.children) == 1:
+            return f"({word_to_symbol.get(node.value, node.value)} {self.to_strict_node(node.children[0])})"
+        
+        else:
+            return f"({self.to_strict_node(node.children[0])} {word_to_symbol.get(node.value, node.value)} {self.to_strict_node(node.children[1])})"
+
+    def build_truth_table(self):
+        with redirect_stdout(open(os.devnull, 'w')):
+            tree = self.build_tree()
+        
+        if tree is None:
+            print("Error: Invalid formula.")
+            return
+        
+        variables = sorted(list(self.get_variables()))
+        n = len(variables)
+        
+        if n == 0:
+            print("Truth Table for constant formula:")
+            print("Formula | Value")
+            value = self.evaluate_constant(tree)
+            print(f"{self.expression} | {value}")
+            return
+        
+        subformulas = self.get_subformulas(tree)
+        
+        _, strict_expr = self.analyze_relaxed_syntax()
+        if strict_expr is None:
+            strict_expr = self.expression
+        
+        header = variables + [self.to_strict_node(sub) for sub in subformulas]
+        
+        interpretations = list(itertools.product([True, False], repeat=n))
+        rows = []
+        for interp in interpretations:
+            assignment = dict(zip(variables, interp))
+            row = [str(int(assignment[var])) for var in variables]
+            for sub in subformulas:
+                sub_value = self.evaluate_tree(sub, assignment)
+                row.append(str(int(sub_value)))
+            rows.append(row)
+        col_widths = [max(len(header[i]), max(len(row[i]) for row in rows)) for i in range(len(header))]
+    
+        header_line = " | ".join(header[i].ljust(col_widths[i]) for i in range(len(header)))
+        print(header_line)
+        
+        separator = "+".join("-" * (col_widths[i] + 2) for i in range(len(header)))
+        print(separator)
+        
+        for row in rows:
+            row_line = " | ".join(row[i].ljust(col_widths[i]) for i in range(len(row)))
+            print(row_line)
+
+    
+    def evaluate_tree(self, node, assignment):
+        if not node.children:
+            if node.value in ['⊤', 'True']:
+                return True
+            elif node.value in ['⊥', 'False']:
+                return False
+            else:
+                return assignment.get(node.value, False)
+        
+        op = node.value
+        if op == 'not':
+            return not self.evaluate_tree(node.children[0], assignment)
+        elif op == 'and':
+            return self.evaluate_tree(node.children[0], assignment) and self.evaluate_tree(node.children[1], assignment)
+        elif op == 'or':
+            return self.evaluate_tree(node.children[0], assignment) or self.evaluate_tree(node.children[1], assignment)
+        elif op == 'implies':
+            left = self.evaluate_tree(node.children[0], assignment)
+            right = self.evaluate_tree(node.children[1], assignment)
+            return not left or right
+        elif op == 'equiv':
+            left = self.evaluate_tree(node.children[0], assignment)
+            right = self.evaluate_tree(node.children[1], assignment)
+            return left == right
+    
+
+    def evaluate_constant(self, tree):
+        return self.evaluate_tree(tree, {})
+    
+    def get_original_expression(self):
+        return self.original_expression
