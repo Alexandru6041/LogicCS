@@ -1,4 +1,4 @@
-ATOM_PATTERN = r"[A-Z]"
+ATOM_PATTERN = r'[A-Z⊤⊥]'
 OPERATIONS_PATTERN = r"(^|∧|∨|v|⇒|→|⇔|↔|¬)"
 
 BINARY_OPS = {"and", 'or', 'implies', 'equiv'}

@@ -17,11 +17,13 @@ class Expression:
     
 
     def __check_formula(tokens, index: int):
+        #Out of bound
         if index >= len(tokens):
             return False, index
 
         token = tokens[index]
-
+        
+        # If token matches ATOM_PATTERN (e.g., "P"), it's valid.
         if re.fullmatch(ATOM_PATTERN, token):
             return True, index + 1
 

@@ -34,9 +34,10 @@ class Menu():
         print("\t2. Analyze Relaxed Syntax")
         print("\t3. Build the abstract syntax step-by-step if the expression is valid")
         print("\t4. Build the truth table for the expression")
-        print("\t5. Get the variables")
-        print("\t6. Enter a new expression")
-        print("\t7. Quit")
+        print("\t5. Check for logical equivalence between 2 propositions")
+        print("\t6. Get the variables")
+        print("\t7. Enter a new expression")
+        print("\t8. Quit")
         print("\n")
         
     def _show_menu(self):
@@ -98,17 +99,37 @@ class Menu():
                         # print(self.client_expression.get_original_expression())
                         self.client_expression.build_truth_table()
                     # self.client_expression.build_truth_table()
-                    
+
                 case 5:
+                    expression2 = input("Second proposition: ")
+                    expression2 = Expression_Methods(expression2)
+                    
+                    if not self.is_well_formed_propositional_formulae:
+                        if self.is_valid_under_relaxed_syntax:
+                            
+                            Expression_Methods(self.strict_version).build_truth_table()           
+                    else:
+                        self.client_expression.build_truth_table()
+                    
+                    print("\n" * 2)
+                    is_valid, strict_version = expression2.analyze_relaxed_syntax()
+                    is_wff, d = expression2.is_wppf()
+                    if not is_wff:
+                        if is_valid:
+                            Expression_Methods(strict_version).build_truth_table()
+                    else:
+                        expression2.build_truth_table()
+                        
+                case 6:
                     if self.is_valid_under_relaxed_syntax or self.is_well_formed_propositional_formulae:
                         vars = self.client_expression.get_variables()
                         print(f"Variables: {sorted(vars)}")
                     else:
                         print("Invalid Expression\n")
-                case 6:   
+                case 7:   
                     break
                 
-                case 7:
+                case 8:
                     exit()
 
                 case _:

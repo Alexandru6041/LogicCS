@@ -35,7 +35,8 @@ class Expression_Methods(Expression):
     
     def get_variables(self) -> set:
         tokens = self._Expression__space_atoms()
-        return {token for token in tokens if re.fullmatch(ATOM_PATTERN, token)}
+        return {token for token in tokens if re.fullmatch(ATOM_PATTERN, token) and token not in ['⊤', '⊥']}
+
     
     def __parse_formula_tree(tokens, index):
         if index >= len(tokens):
@@ -276,7 +277,6 @@ class Expression_Methods(Expression):
         
         if n == 0:
             print("Truth Table for constant formula:")
-            print("Formula | Value")
             value = self.evaluate_constant(tree)
             print(f"{self.expression} | {value}")
             return
@@ -295,7 +295,12 @@ class Expression_Methods(Expression):
             assignment = dict(zip(variables, interp))
             row = [str(int(assignment[var])) for var in variables]
             for sub in subformulas:
-                sub_value = self.evaluate_tree(sub, assignment)
+                if sub.value == '⊤':
+                    sub_value = True
+                elif sub.value == '⊥':
+                    sub_value = False
+                else:
+                    sub_value = self.evaluate_tree(sub, assignment)
                 row.append(str(int(sub_value)))
             rows.append(row)
         col_widths = [max(len(header[i]), max(len(row[i]) for row in rows)) for i in range(len(header))]
@@ -313,9 +318,9 @@ class Expression_Methods(Expression):
     
     def evaluate_tree(self, node, assignment):
         if not node.children:
-            if node.value in ['⊤', 'True']:
+            if node.value == '⊤':
                 return True
-            elif node.value in ['⊥', 'False']:
+            elif node.value in '⊥':
                 return False
             else:
                 return assignment.get(node.value, False)
