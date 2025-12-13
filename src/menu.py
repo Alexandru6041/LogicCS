@@ -101,25 +101,32 @@ class Menu():
                     # self.client_expression.build_truth_table()
 
                 case 5:
-                    expression2 = input("Second proposition: ")
+                    expression2 = input("Enter the second expression: ").strip()
                     expression2 = Expression_Methods(expression2)
+                    
+                    is_valid2, strict_version2 = expression2.analyze_relaxed_syntax()
+                    is_wff2, _ = expression2.is_wppf()
+                    
+                    
+                    if not (is_valid2 or is_wff2):
+                        print("The second expression is neither well-formed nor valid under relaxed syntax.")
+                        continue
+                    
+                    if not is_wff2:
+                        if is_valid2:
+                            expression2 = Expression_Methods(strict_version2)
+                    else:
+                        pass
                     
                     if not self.is_well_formed_propositional_formulae:
                         if self.is_valid_under_relaxed_syntax:
+                            equivalent = Expression_Methods(self.strict_version).check_logical_equivalence(expression2)
+                    else:
+                        equivalent = self.client_expression.check_logical_equivalence(expression2)
                             
-                            Expression_Methods(self.strict_version).build_truth_table()           
-                    else:
-                        self.client_expression.build_truth_table()
+                    print(f"The expressions are logically equivalent: {equivalent}")
                     
-                    print("\n" * 2)
-                    is_valid, strict_version = expression2.analyze_relaxed_syntax()
-                    is_wff, d = expression2.is_wppf()
-                    if not is_wff:
-                        if is_valid:
-                            Expression_Methods(strict_version).build_truth_table()
-                    else:
-                        expression2.build_truth_table()
-                        
+                    
                 case 6:
                     if self.is_valid_under_relaxed_syntax or self.is_well_formed_propositional_formulae:
                         vars = self.client_expression.get_variables()

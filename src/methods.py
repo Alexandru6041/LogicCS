@@ -289,7 +289,7 @@ class Expression_Methods(Expression):
         
         header = variables + [self.to_strict_node(sub) for sub in subformulas]
         
-        interpretations = list(itertools.product([True, False], repeat=n))
+        interpretations = list(itertools.product([False, True], repeat=n))
         rows = []
         for interp in interpretations:
             assignment = dict(zip(variables, interp))
@@ -342,6 +342,46 @@ class Expression_Methods(Expression):
             return left == right
     
 
+    def check_logical_equivalence(self, other: 'Expression_Methods') -> bool:
+
+        with redirect_stdout(open(os.devnull, 'w')):
+            tree1 = self.build_tree()
+            tree2 = other.build_tree()
+            
+        if tree1 is None or tree2 is None:
+            return False
+        
+        vars1 = self.get_variables()
+        vars2 = other.get_variables()
+        all_vars = sorted(vars1.union(vars2))
+        
+        self.build_truth_table()
+        print("\n")
+        
+        other.build_truth_table()
+        print("\n")
+
+        
+        
+        if not all_vars:
+            val1 = self.evaluate_constant(tree1)
+            val2 = other.evaluate_constant(tree2)
+            return val1 == val2
+        
+        n = len(all_vars)
+        interpretations = itertools.product([True, False], repeat=n)
+        
+        
+    
+        for interp in interpretations:
+            assignment = dict(zip(all_vars, interp))
+            val1 = self.evaluate_tree(tree1, assignment)
+            val2 = other.evaluate_tree(tree2, assignment)
+            if val1 != val2:
+                return False
+        return True
+    
+    
     def evaluate_constant(self, tree):
         return self.evaluate_tree(tree, {})
     
